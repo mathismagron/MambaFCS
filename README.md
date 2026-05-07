@@ -355,4 +355,6 @@ You might consider citing:
 
 3. **Wasalathilake, N., et al (2026)**
   *A Controlled Benchmark of Visual State-Space Backbones with Domain-Shift and Boundary Analysis for Remote-Sensing Segmentation*
-  
+
+4. **Chen, Zhong., et al. (2026)**
+   *Remote Sensing Semantic Change Detection with Multi-dimensional Spatiotemporal Scanning*
