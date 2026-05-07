@@ -22,7 +22,7 @@
     <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="MIT License">
   </a>
   <a href="#-citations">
-    <img src="https://img.shields.io/badge/Citations-3-blue.svg" alt="Citations">
+    <img src="https://img.shields.io/badge/Citations-4-blue.svg" alt="Citations">
   </a>
 </p>
 <p>
