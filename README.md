@@ -63,18 +63,16 @@ Ready to push the boundaries of change detection? Let's go.
 
 Semantic Change Detection in remote sensing is tough: seasonal shifts, lighting variations, and severe class imbalance constantly trip up traditional methods.
 
-Mamba-FCS changes the game:
+We try to solve this problem by,
 
-- **VMamba backbone** → linear-time long-range modeling (no more transformer VRAM nightmares)  
+- **VMamba backbone** → linear-time long-range modeling
 - **Joint spatio–frequency fusion** → injects FFT log-amplitude cues into spatial features for appearance invariance + sharper boundaries  
 - **CGA module** → change probabilities actively guide semantic refinement (and vice versa)  
-- **SeK Loss** → finally treats rare classes with the respect they deserve  
-
-Outcome: cleaner maps, stronger rare-class recall, and real-world resilience.
+- **SeK Loss** → direct optimization for evaluation metrics 
 
 <p align="center">
   <img src="docs/full_architecture.png" alt="Mamba-FCS Architecture" width="95%">
-  <br><em>Spatial power + frequency smarts + change-guided attention = next-level SCD</em>
+  <br><em>Spatial power + frequency smarts + change-guided attention =Mamba-FCS</em>
 </p>
 
 ---
@@ -85,21 +83,17 @@ The frequency domain is known to reveal latent structures in signals that remain
 
 ### Building on this premise, we explore whether Fourier transformation of latent representations can expose similarly discriminative hidden features.
 
-This spatio–frequency, change-guided design is a key factor underlying improved rare-class performance and sharper semantic boundary delineation.
-
 ---
 
-## 🧠 Method in ~30 Seconds
+## 🧠 Method
 
 Feed in bi-temporal images **T1** and **T2**:
 
 1. VMamba encoder extracts rich multi-scale features from both timestamps  
-2. JSF injects **frequency-domain log-amplitude (FFT)** into spatial features → stronger invariance to illumination/seasonal shifts  
+2. JSF injects **frequency-domain log-amplitude (FFT)** into spatial features
 3. CGA leverages change cues to tighten BCD ↔ SCD synergy  
 4. Lightweight decoder predicts the final semantic change map  
 5. SeK Loss drives balanced optimization, even when changed pixels are scarce  
-
-Simple. Smart. Superior.
 
 ---
 
@@ -135,6 +129,12 @@ pip install -r requirements.txt
 pip install pyyaml
 ````
 
+Install a compatible ```pytorch``` version for your current CUDA setup. We installed,
+
+```bash
+pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu126
+```
+
 ### 4. Build Selective Scan Kernel (Critical Step)
 
 ```bash
@@ -143,7 +143,7 @@ pip install .
 cd ../../..
 ```
 
-(Pro tip: match your torch CUDA version with nvcc/GCC if you hit issues.)
+(Match your torch CUDA version with nvcc/GCC if you hit issues.)
 
 ---
 
@@ -173,17 +173,17 @@ Plug-and-play support for **SECOND** and **Landsat-SCD**.
 
 Same idea, with `train_list.txt`, `val_list.txt`, `test_list.txt`.
 
-**Must-do**: Use integer class maps (not RGB). Convert palettes first.
+ Use integer class maps (not RGB). Convert palettes first.
 
 ---
 
 ## 🚀 Train & Evaluation
 
-YAML-driven — clean and flexible.
+We support ```YAML``` driven training via,
 
 1. Edit paths in `configs/train_LANDSAT.yaml` or `configs/train_SECOND.yaml`
 
-2. Fire it up:
+2. Start Training:
 
 ```bash
 # Landsat-SCD
@@ -204,11 +204,11 @@ Resume runs? Just flip `resume: true` and point to optimizer/scheduler states.
 
 For an interactive workflow, use the notebook [`annotations/MambaFCS.ipynb`](annotations/MambaFCS.ipynb).
 
-It is set up for users who want to:
+Notebook supports,
 
 - run evaluations interactively
 - inspect predictions and qualitative outputs
-- perform annotation and review in a notebook-driven workflow
+- perform annotations
 
 Pair it with the released checkpoints on [Hugging Face](https://huggingface.co/buddhi19/MambaFCS/tree/main) for fast experimentation without retraining.
 
@@ -344,23 +344,3 @@ You might consider citing:
 ---
 
 ## 🌍🛰️ Got inspired? Give us a STAR🌟🌟
-
-### 🧾 Citing Works
-
-1. **Shen, H., et al. (2026)**  
-   *Foundation Model-Driven Semantic Change Detection in Remote Sensing Imagery*  
-
-2. **史振威, et al. (2026)**
-    *基于深度学习的双时相光学遥感图像变化检测方法综述* (A review of deep learning-based methods for detecting changes in dual-temporal optical remote sensing images.)
-
-3. **Wasalathilake, N., et al (2026)**
-  *A Controlled Benchmark of Visual State-Space Backbones with Domain-Shift and Boundary Analysis for Remote-Sensing Segmentation*
-
-4. **Chen, Zhong., et al. (2026)**
-   *Remote Sensing Semantic Change Detection with Multi-dimensional Spatiotemporal Scanning*
-
-5. **Liang, J., et al. (2026)**
-    *FSU-Mamba: Frequency-aware and Spatial-Temporal State Space Model for Robust Building Change Detection via Uncertainty-weighted Optimization*
-
-6. **Ren, J., & Xu, Z. (2026)**
-    *Multi‐Scale Frequency Expert Networks via SAM2 Adaptation for Change Detection*
