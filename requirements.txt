@@ -9,3 +9,7 @@ submitit
 tensorboardX
 fvcore
 seaborn
+imageio
+cv2
+scipy
+tensorboard

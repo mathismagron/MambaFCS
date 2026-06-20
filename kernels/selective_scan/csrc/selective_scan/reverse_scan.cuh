@@ -12,6 +12,23 @@
 // #include <cub/detail/uninitialized_copy.cuh>
 #include "uninitialized_copy.cuh"
 
+// --- CUB 3.0 (CUDA 13) compatibility shims ---------------------------------
+// CUB 3.0 removed the internal helpers cub::LaneId() and cub::CTA_SYNC().
+// Provide drop-in equivalents with the original semantics so this kernel
+// still builds against CUDA 13 / CCCL 3.x.
+#if defined(CUB_VERSION) && (CUB_VERSION >= 300000)
+CUB_NAMESPACE_BEGIN
+__device__ __forceinline__ unsigned int LaneId() {
+    unsigned int ret;
+    asm volatile("mov.u32 %0, %%laneid;" : "=r"(ret));
+    return ret;
+}
+__device__ __forceinline__ void CTA_SYNC() {
+    __syncthreads();
+}
+CUB_NAMESPACE_END
+#endif
+
 /**
  * Perform a reverse sequential reduction over \p LENGTH elements of the \p input array.  The aggregate is returned.
  */

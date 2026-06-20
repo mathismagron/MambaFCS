@@ -137,13 +137,53 @@ pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu12
 
 ### 4. Build Selective Scan Kernel (Critical Step)
 
+The kernel's `setup.py` imports `torch` at build time but ships no
+`pyproject.toml`, so pip's default build isolation can't see your installed
+torch (`ModuleNotFoundError: No module named 'torch'`). Always build with
+`--no-build-isolation`:
+
 ```bash
 cd kernels/selective_scan
-pip install .
-cd ../../..
+pip install . --no-build-isolation
+cd ../..
 ```
 
-(Match your torch CUDA version with nvcc/GCC if you hit issues.)
+Your `nvcc` must match your torch CUDA **major** version — compare
+`python -c "import torch; print(torch.version.cuda)"` with `nvcc --version`. If
+they differ, install/activate a matching CUDA toolkit before building.
+
+<details>
+<summary><b>Building against CUDA 13 (torch <code>cu130</code>) with no matching system toolkit</b></summary>
+
+If torch is a `cu130` build but the machine only has a CUDA 12.x system toolkit
+(or none, and you lack root), install a matching CUDA 13 compiler into the venv
+as pip wheels — torch already provides the cu13 runtime/headers:
+
+```bash
+cd kernels/selective_scan
+
+# CUDA 13 compiler + CUB/Thrust (CCCL) headers + ninja
+pip install "cuda-toolkit[nvcc,cccl]==13.0.2" ninja
+# Pin nvvm + crt to nvcc's version (13.0.88); otherwise the newer front-end
+# emits PTX the 13.0 ptxas rejects ("Unsupported .version 9.3").
+pip install "nvidia-nvvm==13.0.88" "nvidia-cuda-crt==13.0.88"
+
+# Point the build at the in-venv CUDA 13 toolkit
+CU=$(python -c "import os,nvidia;print(os.path.join(os.path.dirname(nvidia.__file__),'cu13'))")
+ln -sf libcudart.so.13 "$CU/lib/libcudart.so"   # unversioned lib for -lcudart
+export CUDA_HOME="$CU" PATH="$CU/bin:$PATH" LD_LIBRARY_PATH="$CU/lib:$LD_LIBRARY_PATH" MAX_JOBS=4
+
+pip install . --no-build-isolation
+cd ../..
+```
+
+CUDA 13 also needs two source tweaks that are already applied in this repo —
+dropping the removed `compute_70` (Volta) gencode in `setup.py` (now targets
+`sm_80`/`sm_86`; adjust for your GPU) and a CUB 3.0 shim for the removed
+`cub::LaneId()`/`cub::CTA_SYNC()`. See
+[`kernels/selective_scan/README.md`](kernels/selective_scan/README.md) for the
+full rationale.
+</details>
 
 ---
 

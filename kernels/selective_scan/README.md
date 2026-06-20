@@ -91,6 +91,85 @@ def selective_scan_easy(us, dts, As, Bs, Cs, Ds, delta_bias=None, delta_softplus
 
 ```
 
+## Installing the CUDA `selective_scan` kernels
+
+This directory builds the fused CUDA kernels `selective_scan_cuda_core`,
+`selective_scan_cuda_ndstate`, and `selective_scan_cuda_oflex`. The steps below
+target the project venv at `/mnt/store/bwarnas1/SOTA-CD/.libs/mambafcs`, whose
+PyTorch is built against **CUDA 13** (`torch 2.12.1+cu130`).
+
+> A plain `pip install .` fails here for two reasons:
+> 1. `setup.py` does `import torch` at top level but there is no `pyproject.toml`,
+>    so pip's PEP 517 build isolation creates a fresh env without torch →
+>    `ModuleNotFoundError: No module named 'torch'`.
+> 2. The only system CUDA toolkit is 12.4, while torch is `cu130`. `nvcc` and
+>    torch must share the same CUDA **major** version or the build aborts.
+
+Activate the venv first, then run the steps below from this directory
+(`MambaFCS/kernels/selective_scan`).
+
+### 1. Add a CUDA 13 toolkit inside the venv (no root needed)
+
+torch already installs the CUDA 13 runtime + headers as pip wheels under
+`.../site-packages/nvidia/cu13`. Add the matching compiler, the CCCL
+(CUB/Thrust) headers, and ninja:
+
+```bash
+pip install "cuda-toolkit[nvcc,cccl]==13.0.2" ninja
+# Pin nvvm + crt to the SAME version as nvcc (13.0.88). Otherwise pip grabs the
+# newer 13.3 front-end, which emits PTX the 13.0 ptxas can't assemble
+# ("ptxas fatal: Unsupported .version 9.3; current version is '9.0'").
+pip install "nvidia-nvvm==13.0.88" "nvidia-cuda-crt==13.0.88"
+```
+
+### 2. Add the unversioned `libcudart.so` symlink
+
+The runtime wheel ships only `libcudart.so.13`, but the linker needs an
+unversioned `libcudart.so` to satisfy `-lcudart`:
+
+```bash
+CU=$(python -c "import os,nvidia;print(os.path.join(os.path.dirname(nvidia.__file__),'cu13'))")
+ln -sf libcudart.so.13 "$CU/lib/libcudart.so"
+```
+
+### 3. Build and install
+
+```bash
+CU=$(python -c "import os,nvidia;print(os.path.join(os.path.dirname(nvidia.__file__),'cu13'))")
+export CUDA_HOME="$CU"
+export PATH="$CU/bin:$PATH"
+export LD_LIBRARY_PATH="$CU/lib:$LD_LIBRARY_PATH"
+export MAX_JOBS=4            # cap parallel nvcc jobs to limit RAM use
+
+pip install . --no-build-isolation
+```
+
+`--no-build-isolation` is what makes the build reuse the venv's torch and the
+nvcc installed in step 1.
+
+### CUDA 13 source changes (already applied in this repo)
+
+Building against CUDA 13 / CCCL 3.0 required two small edits that are already
+committed here — listed so they can be redone on a fresh upstream checkout or
+re-targeted to a different GPU:
+
+- **`setup.py`** — removed the hardcoded `compute_70` (Volta) gencode, which
+  CUDA 13 no longer supports, and now targets `sm_80` + `sm_86` (this box is
+  RTX A5000 = sm_86). Edit the `-gencode` flags to match your GPU.
+- **`csrc/selective_scan/reverse_scan.cuh`** — CUB 3.0 removed the internal
+  helpers `cub::LaneId()` and `cub::CTA_SYNC()`; a small `CUB_VERSION >= 300000`
+  shim re-adds them with their original semantics.
+
+### Runtime
+
+If importing a kernel raises `libcudart.so.13: cannot open shared object file`,
+point the loader at the wheel's CUDA libs:
+
+```bash
+CU=$(python -c "import os,nvidia;print(os.path.join(os.path.dirname(nvidia.__file__),'cu13'))")
+export LD_LIBRARY_PATH="$CU/lib:$LD_LIBRARY_PATH"
+```
+
 ### to test
 ```bash
 pytest test_selective_scan.py

@@ -55,10 +55,11 @@ def get_ext():
                 "Note: make sure nvcc has a supported version by running nvcc -V."
             )
 
-    cc_flag.append("-gencode")
-    cc_flag.append("arch=compute_70,code=sm_70")
+    # CUDA 13 dropped Volta (sm_70); target Ampere sm_80 + sm_86 (this box: RTX A5000).
     cc_flag.append("-gencode")
     cc_flag.append("arch=compute_80,code=sm_80")
+    cc_flag.append("-gencode")
+    cc_flag.append("arch=compute_86,code=sm_86")
     if (CUDA_HOME is not None) and (bare_metal_version >= Version("11.8")):
         cc_flag.append("-gencode")
         cc_flag.append("arch=compute_90,code=sm_90")

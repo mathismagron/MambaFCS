@@ -181,7 +181,7 @@ class Trainer(object):
                 'similarity': 0.05
             }
             
-            SEK_START_ITER = 15000 if self.args.dataset == 'SECOND' else 250000
+            SEK_START_ITER = 0 if self.args.dataset == 'SECOND' else 150000
 
             if itera + self.args.start_iter > SEK_START_ITER:
                 weights['sek'] = 0.5
@@ -208,7 +208,7 @@ class Trainer(object):
             if (itera + 1) % 10 == 0:
                 print(f'iter is {itera + 1 + self.args.start_iter}, change detection loss is {weights["bcd"] * ce_loss_cd}, '
                       f'classification loss is {weights["ce"] * (ce_loss_clf_t1 + ce_loss_clf_t2) + weights["lovasz"] * (lovasz_loss_clf_t1 + lovasz_loss_clf_t2)}, '
-                      f'SeK loss is {1.4 * sek_loss_value}')
+                      f'SeK loss is {0.5*sek_loss_value}')
                 self.writer.add_scalar('Loss/ChangeDetection', weights["bcd"] * ce_loss_cd, itera + 1 + self.args.start_iter)
                 self.writer.add_scalar('Loss/Segmentation', 1.4 * sek_loss_value, itera + 1 + self.args.start_iter)
                 self.writer.add_scalar('Loss/Classification', weights["ce"] * (ce_loss_clf_t1 + ce_loss_clf_t2) + weights["lovasz"] * (lovasz_loss_clf_t1 + lovasz_loss_clf_t2), itera + 1 + self.args.start_iter)
