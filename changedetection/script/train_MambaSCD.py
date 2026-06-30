@@ -96,8 +96,10 @@ class Trainer(object):
         self.scheduler = StepLR(self.optim, step_size=10000, gamma=0.5)
 
         if args.resume is not None:
-            self.optim.load_state_dict(torch.load(args.optim_path))
-            self.scheduler.load_state_dict(torch.load(args.scheduler_path))
+            if getattr(args, 'optim_path', None) is not None and os.path.exists(args.optim_path):
+                self.optim.load_state_dict(torch.load(args.optim_path))
+            if getattr(args, 'scheduler_path', None) is not None and os.path.exists(args.scheduler_path):
+                self.scheduler.load_state_dict(torch.load(args.scheduler_path))
 
         self.log_dir = os.path.join(main_dir,'saved_models', f'{args.model_saving_name}')
         if not os.path.exists(self.log_dir):
