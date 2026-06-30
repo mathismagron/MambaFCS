@@ -386,7 +386,7 @@ def make_data_loader(args, **kwargs):  # **kwargs could be omitted
     #                              drop_last=False)
     #     return data_loader
 
-    elif 'SECOND' in args.dataset:
+    elif 'SECOND' in args.dataset or 'Hi-UCD' in args.dataset:
         dataset = SemanticChangeDetectionDatset(args.train_dataset_path, args.train_data_name_list, args.crop_size, args.max_iters, args.type)
         data_loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=args.shuffle, **kwargs, num_workers=16,
                                  drop_last=False)

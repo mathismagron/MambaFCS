@@ -183,7 +183,7 @@ class Trainer(object):
                 'similarity': 0.05
             }
             
-            SEK_START_ITER = 0 if self.args.dataset == 'SECOND' else 150000
+            SEK_START_ITER = 0 if (self.args.dataset == 'SECOND' or 'Hi-UCD' in self.args.dataset) else 150000
 
             if itera + self.args.start_iter > SEK_START_ITER:
                 weights['sek'] = 0.5
@@ -237,7 +237,7 @@ class Trainer(object):
     def validation(self):
         print('---------starting evaluation-----------')
         dataset = None
-        if self.args.dataset == 'SECOND':
+        if self.args.dataset == 'SECOND' or 'Hi-UCD' in self.args.dataset:
             dataset = SemanticChangeDetectionDatset(self.args.test_dataset_path, self.args.test_data_name_list, 256, None, 'test')
 
         if self.args.dataset == 'LandSat':
@@ -288,7 +288,7 @@ class Trainer(object):
                     acc = (acc_A + acc_B) * 0.5
                     acc_meter.update(acc)
 
-        kappa_n0, Fscd, IoU_mean, Sek = SCDD_eval_all(preds_all, labels_all, 37)
+        kappa_n0, Fscd, IoU_mean, Sek = SCDD_eval_all(preds_all, labels_all, 100)
         print(f'Kappa coefficient rate is {kappa_n0}, F1 is {Fscd}, OA is {acc_meter.avg}, '
               f'mIoU is {IoU_mean}, SeK is {Sek}')
         
