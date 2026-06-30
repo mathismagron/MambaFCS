@@ -1,0 +1,42 @@
+Transfert de l'archive SECOND.zip vers le noeud de calcul...
+Decompression en cours...
+Demarrage de l'evaluation sur le dataset SECOND...
+/home/magron13/MambaFCS/classification/models/vmamba.py:252: FutureWarning: `torch.cuda.amp.custom_fwd(args...)` is deprecated. Please use `torch.amp.custom_fwd(args..., device_type='cuda')` instead.
+  @torch.cuda.amp.custom_fwd
+/home/magron13/MambaFCS/classification/models/vmamba.py:260: FutureWarning: `torch.cuda.amp.custom_bwd(args...)` is deprecated. Please use `torch.amp.custom_bwd(args..., device_type='cuda')` instead.
+  @torch.cuda.amp.custom_bwd
+/home/magron13/MambaFCS/classification/models/vmamba.py:275: FutureWarning: `torch.cuda.amp.custom_fwd(args...)` is deprecated. Please use `torch.amp.custom_fwd(args..., device_type='cuda')` instead.
+  @torch.cuda.amp.custom_fwd
+/home/magron13/MambaFCS/classification/models/vmamba.py:283: FutureWarning: `torch.cuda.amp.custom_bwd(args...)` is deprecated. Please use `torch.amp.custom_bwd(args..., device_type='cuda')` instead.
+  @torch.cuda.amp.custom_bwd
+/home/magron13/MambaFCS/classification/models/vmamba.py:296: FutureWarning: `torch.cuda.amp.custom_fwd(args...)` is deprecated. Please use `torch.amp.custom_fwd(args..., device_type='cuda')` instead.
+  @torch.cuda.amp.custom_fwd
+/home/magron13/MambaFCS/classification/models/vmamba.py:304: FutureWarning: `torch.cuda.amp.custom_bwd(args...)` is deprecated. Please use `torch.amp.custom_bwd(args..., device_type='cuda')` instead.
+  @torch.cuda.amp.custom_bwd
+/home/magron13/env_mambafcs/lib/python3.11/site-packages/torch/utils/data/dataloader.py:424: UserWarning: This DataLoader will create 16 worker processes in total. Our suggested max number of worker in current system is 8, which is smaller than what this DataLoader is going to create. Please be aware that excessive worker creation might get DataLoader running slow or even freeze, lower the worker number to avoid potential slowness/freeze if necessary.
+  self.check_worker_number_rationality()
+/home/magron13/env_mambafcs/lib/python3.11/site-packages/torch/nn/modules/linear.py:124: UserWarning: Initializing zero-element tensors is a no-op
+  init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+=> merge config from /home/magron13/MambaFCS/changedetection/configs/vssm1/vssm_base_224.yaml
+Failed loading checkpoint form /home/magron13/Checkpoints/vssm_base_0229_ckpt_epoch_237.pth: [Errno 2] No such file or directory: '/home/magron13/Checkpoints/vssm_base_0229_ckpt_epoch_237.pth'
+False
+---------starting evaluation-----------
+iter is 0
+iter is 100
+iter is 200
+iter is 300
+iter is 400
+iter is 500
+iter is 600
+iter is 700
+iter is 800
+iter is 900
+iter is 1000
+iter is 1100
+iter is 1200
+iter is 1300
+iter is 1400
+iter is 1500
+iter is 1600
+Kappa coefficient rate is 0.3548679187968833, F1 is 0.6393163890889182, OA is 0.8797977057933243, mIoU is 0.728355134421812, SeK is 0.23224868157364612
+Inference termine !
