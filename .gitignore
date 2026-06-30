@@ -27,6 +27,7 @@ pretrained/
 classification/models/pscan.py
 pretrained/
 
+pretrained_weight/
 # we do not release code of heat series
 classification/configs/heat
 classification/models/heat
@@ -56,3 +57,4 @@ kernels/selective_scan/ssmtriton.py
 test.sh
 
 saved_models/
+*.pth
