@@ -80,7 +80,7 @@ class Trainer(object):
         if args.resume is not None:
             if not os.path.isfile(args.resume):
                 raise RuntimeError("=> no checkpoint found at '{}'".format(args.resume))
-            checkpoint = torch.load(args.resume)
+            checkpoint = torch.load(args.resume, map_location='cpu')
             model_dict = {}
             state_dict = self.deep_model.state_dict()
             for k, v in checkpoint.items():
