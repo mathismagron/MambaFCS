@@ -213,12 +213,6 @@ def _build_args(cfg: Dict[str, Any], repo_root: str) -> SimpleNamespace:
         model_saving_name=str(_required(cfg, "model_saving_name")),
     )
 
-    if not getattr(cli, "evaluate", False):
-        if args.resume is not None and (args.optim_path is None or args.scheduler_path is None):
-            raise ValueError(
-                "When `resume` is set, both `optim_path` and `scheduler_path` must also be set "
-                "(they are required by `train_MambaSCD.Trainer`)."
-            )
 
     return args
 
