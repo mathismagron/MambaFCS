@@ -13,12 +13,12 @@ type: train
 # Dataset root should contain: train/ and test/ subfolders.
 dataset_root: $SLURM_TMPDIR/Hi-UCD_formatted
 train_dataset_path: $SLURM_TMPDIR/Hi-UCD_formatted/train
-test_dataset_path: $SLURM_TMPDIR/Hi-UCD_formatted/test
+test_dataset_path: $SLURM_TMPDIR/Hi-UCD_formatted/val
 
 # List files are resolved relative to `dataset_root` when not absolute.
 train_data_list_paths:
   - train.txt
-test_data_list_path: test.txt
+test_data_list_path: val.txt
 
 # ---- Training ----
 shuffle: true

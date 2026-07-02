@@ -18,7 +18,7 @@ unzip -q $SLURM_TMPDIR/Hi-UCD_formatted.zip -d $SLURM_TMPDIR/
 
 # Génération des listes de fichiers
 ls -1 $SLURM_TMPDIR/Hi-UCD_formatted/train/T1 > $SLURM_TMPDIR/Hi-UCD_formatted/train.txt
-ls -1 $SLURM_TMPDIR/Hi-UCD_formatted/test/T1 > $SLURM_TMPDIR/Hi-UCD_formatted/test.txt
+ls -1 $SLURM_TMPDIR/Hi-UCD_formatted/val/T1 > $SLURM_TMPDIR/Hi-UCD_formatted/val.txt
 
 cd ~/MambaFCS
 echo "Démarrage de l'entraînement sur le dataset Hi-UCD..."
