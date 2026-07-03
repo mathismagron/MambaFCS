@@ -101,7 +101,7 @@ class Trainer(object):
             if getattr(args, 'scheduler_path', None) is not None and os.path.exists(args.scheduler_path):
                 self.scheduler.load_state_dict(torch.load(args.scheduler_path))
 
-        self.log_dir = os.path.join(main_dir,'saved_models', f'{args.model_saving_name}')
+        self.log_dir = self.model_save_path
         if not os.path.exists(self.log_dir):
             os.makedirs(self.log_dir)
 
