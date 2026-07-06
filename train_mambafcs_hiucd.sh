@@ -2,7 +2,7 @@
 #SBATCH --job-name=Train_HiUCD
 #SBATCH --gres=gpu:h100:1              
 #SBATCH --cpus-per-task=8              
-#SBATCH --mem=128000M                   
+#SBATCH --mem=256000M                   
 #SBATCH --time=12:00:00                 
 #SBATCH --output=train-hiucd-%j.out
 

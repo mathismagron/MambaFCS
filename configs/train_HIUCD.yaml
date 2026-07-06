@@ -4,7 +4,7 @@
 # ---- VMamba / VSSM backbone config ----
 cfg: MambaFCS/changedetection/configs/vssm1/vssm_base_224.yaml
 opts: null
-pretrained_weight_path: Checkpoints/vssm_base_0229_ckpt_epoch_237.pth
+pretrained_weight_path: MambaFCS/pretrained_weight/vssm_base_0229_ckpt_epoch_237.pth
 
 # ---- Dataset ----
 dataset: Hi-UCD
