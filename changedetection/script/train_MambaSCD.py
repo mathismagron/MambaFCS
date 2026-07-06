@@ -84,7 +84,7 @@ class Trainer(object):
             model_dict = {}
             state_dict = self.deep_model.state_dict()
             for k, v in checkpoint.items():
-                if k in state_dict:
+                if k in state_dict and state_dict[k].shape == v.shape:
                     model_dict[k] = v
             state_dict.update(model_dict)
             self.deep_model.load_state_dict(state_dict)
