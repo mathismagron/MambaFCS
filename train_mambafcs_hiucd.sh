@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=Train_HiUCD
+#SBATCH --job-name=MambaFCS_HiUCD
 #SBATCH --gres=gpu:h100:1              
 #SBATCH --cpus-per-task=8              
 #SBATCH --mem=256000M                   
