@@ -30,8 +30,8 @@ learning_rate: 1.0e-4
 weight_decay: 5.0e-4
 num_classes: 10
 
-# ---- Checkpointing (optional) ----
-resume: null
+# ---- Checkpointing (fine-tuning from SECOND) ----
+resume: MambaFCS/pretrained_weight/SECOND_SeK_0.255.pth
 optim_path: null
 scheduler_path: null
 
