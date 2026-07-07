@@ -1,0 +1,41 @@
+# [ÉTUDE ablation encodeur] BASELINE 4 stages — dataset SECOND, depuis ImageNet.
+cfg: MambaFCS/changedetection/configs/vssm1/vssm_base_224.yaml
+opts: null
+# Poids de départ = backbone VMamba pré-entraîné ImageNet (PAS SECOND).
+pretrained_weight_path: MambaFCS/pretrained_weight/vssm_base_0229_ckpt_epoch_237.pth
+
+# ---- Dataset ----
+dataset: SECOND
+type: train
+dataset_root: $SLURM_TMPDIR/SECOND
+train_dataset_path: $SLURM_TMPDIR/SECOND/train
+test_dataset_path: $SLURM_TMPDIR/SECOND/test
+train_data_list_paths:
+  - train.txt
+test_data_list_path: test.txt
+
+# ---- Training ----
+shuffle: true
+batch_size: 2
+crop_size: 512
+start_iter: 0
+max_iters: 800000
+learning_rate: 1.0e-4
+weight_decay: 5.0e-4
+num_classes: 7
+
+# ---- Checkpointing : on part d'ImageNet, donc pas de resume de poids CD ----
+resume: null
+optim_path: null
+scheduler_path: null
+save_interval: 2000
+
+# ---- Outputs (nom distinct par run pour ne pas mélanger checkpoints/logs) ----
+model_type: MambaSCD_base
+model_param_path: MambaFCS/saved_models/study
+model_saving_name: SECOND_4stage
+
+# ---- Runtime ----
+cuda: true
+cuda_device: 0
+do_validation: true

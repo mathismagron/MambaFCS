@@ -28,7 +28,12 @@ from MambaFCS.changedetection.models.GuidedFusion import PyramidFusion
 class STMambaSCD(nn.Module):
     def __init__(self, output_cd, output_clf, pretrained,  **kwargs):
         super(STMambaSCD, self).__init__()
-        self.encoder = Backbone_VSSM(out_indices=(0, 1, 2, 3), pretrained=pretrained, **kwargs)
+        # Nombre de stages déduit de la profondeur du backbone (len(depths)).
+        # Retirer un stage à l'encodeur = fournir un `depths`/backbone plus court
+        # (ex. [2, 2, 15] au lieu de [2, 2, 15, 2]) ; les décodeurs s'adaptent
+        # automatiquement via len(encoder.dims).
+        num_stages = len(kwargs['depths'])
+        self.encoder = Backbone_VSSM(out_indices=tuple(range(num_stages)), pretrained=pretrained, **kwargs)
         
         _NORMLAYERS = dict(
             ln=nn.LayerNorm,
@@ -81,8 +86,11 @@ class STMambaSCD(nn.Module):
             **clean_kwargs
         )
 
-        self.main_clf_cd = PyramidFusion(in_channels=128, out_channels=output_cd)
-        self.aux_clf = PyramidFusion(in_channels=128, out_channels=output_clf)
+        # La sortie des décodeurs est toujours au niveau du stage le plus superficiel
+        # (encoder.dims[0]), inchangé quand on retire le stage le plus profond.
+        head_in = self.encoder.dims[0]
+        self.main_clf_cd = PyramidFusion(in_channels=head_in, out_channels=output_cd)
+        self.aux_clf = PyramidFusion(in_channels=head_in, out_channels=output_clf)
 
 
     def forward(self, pre_data, post_data):

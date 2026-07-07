@@ -1,0 +1,22 @@
+# VSSM base SANS le stage le plus profond (ablation encodeur 3 stages).
+# Identique à vssm_base_224.yaml mais DEPTHS passe de [2,2,15,2] à [2,2,15] :
+#   dims = [128, 256, 512]  (au lieu de [128, 256, 512, 1024])
+#   résolutions 1/4, 1/8, 1/16 (le stage 1/32 est retiré).
+# Les poids ImageNet (patch_embed, layers.0/1/2) se chargent à l'identique via
+# load_state_dict(strict=False) ; les clés du stage retiré (layers.3) sont ignorées.
+MODEL:
+  TYPE: vssm
+  NAME: vssm1_base_0229_3stage
+  DROP_PATH_RATE: 0.6
+  VSSM:
+    EMBED_DIM: 128
+    DEPTHS: [ 2, 2, 15 ]
+    SSM_D_STATE: 1
+    SSM_DT_RANK: "auto"
+    SSM_RATIO: 2.0
+    SSM_CONV: 3
+    SSM_CONV_BIAS: false
+    SSM_FORWARDTYPE: "v3noz"
+    MLP_RATIO: 4.0
+    DOWNSAMPLE: "v3"
+    PATCHEMBED: "v2"

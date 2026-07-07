@@ -3,124 +3,73 @@ import torch.nn as nn
 import torch.nn.functional as F
 from MambaFCS.classification.models.vmamba import VSSM, LayerNorm2d, VSSBlock, Permute
 from MambaFCS.changedetection.models.ResBlockSe import ResBlock, SqueezeExcitation
-from MambaFCS.changedetection.models.GuidedFusion import PyramidFusion, PyramidFusion, PyramidFusion, FFTBranch
+from MambaFCS.changedetection.models.GuidedFusion import PyramidFusion, FFTBranch
 from MambaFCS.changedetection.models.MultiScaleChangeGuidedAttention import ChangeGuidedAttention
+from MambaFCS.changedetection.models.ChangeDecoder import _make_st_block
 
 import os
 main_dir = os.path.dirname(os.path.dirname(os.path.dirname((os.path.dirname(__file__)))))
 
+
 class SemanticDecoder(nn.Module):
+    """Décodeur de segmentation sémantique (T1 ou T2), guidé par les cartes de changement.
+
+    Généralisé à un nombre arbitraire de stages (déduit de ``len(encoder_dims)``).
+    ``features`` et ``change_maps`` sont ordonnés du plus superficiel (index 0) au
+    plus profond (index N-1). Pour N = 4 le graphe est strictement identique à
+    l'implémentation d'origine.
+    """
+
     def __init__(self, encoder_dims, channel_first, norm_layer, ssm_act_layer, mlp_act_layer, **kwargs):
         super(SemanticDecoder, self).__init__()
-
+        self.num_stages = len(encoder_dims)
         self.CHANGE_GUIDED_ATTENTION = True
-        # Define the VSS Block for Spatio-temporal relationship modelling
-        self.st_block_4_semantic = nn.Sequential(
-            Permute(0, 2, 3, 1) if not channel_first else nn.Identity(),
-            VSSBlock(hidden_dim=encoder_dims[-1], drop_path=0.1, norm_layer=norm_layer, channel_first=channel_first,
-                ssm_d_state=kwargs['ssm_d_state'], ssm_ratio=kwargs['ssm_ratio'], ssm_dt_rank=kwargs['ssm_dt_rank'], ssm_act_layer=ssm_act_layer,
-                ssm_conv=kwargs['ssm_conv'], ssm_conv_bias=kwargs['ssm_conv_bias'], ssm_drop_rate=kwargs['ssm_drop_rate'], ssm_init=kwargs['ssm_init'],
-                forward_type=kwargs['forward_type'], mlp_ratio=kwargs['mlp_ratio'], mlp_act_layer=mlp_act_layer, mlp_drop_rate=kwargs['mlp_drop_rate'],
-                gmlp=kwargs['gmlp'], use_checkpoint=kwargs['use_checkpoint']),
-            Permute(0, 3, 1, 2) if not channel_first else nn.Identity(),
-        )
-        self.st_block_3_semantic = nn.Sequential(
-            Permute(0, 2, 3, 1) if not channel_first else nn.Identity(),
-            VSSBlock(hidden_dim=encoder_dims[-2], drop_path=0.1, norm_layer=norm_layer, channel_first=channel_first,
-                ssm_d_state=kwargs['ssm_d_state'], ssm_ratio=kwargs['ssm_ratio'], ssm_dt_rank=kwargs['ssm_dt_rank'], ssm_act_layer=ssm_act_layer,
-                ssm_conv=kwargs['ssm_conv'], ssm_conv_bias=kwargs['ssm_conv_bias'], ssm_drop_rate=kwargs['ssm_drop_rate'], ssm_init=kwargs['ssm_init'],
-                forward_type=kwargs['forward_type'], mlp_ratio=kwargs['mlp_ratio'], mlp_act_layer=mlp_act_layer, mlp_drop_rate=kwargs['mlp_drop_rate'],
-                gmlp=kwargs['gmlp'], use_checkpoint=kwargs['use_checkpoint']),
-            Permute(0, 3, 1, 2) if not channel_first else nn.Identity(),
-        )
-        self.st_block_2_semantic = nn.Sequential(
-            Permute(0, 2, 3, 1) if not channel_first else nn.Identity(),
-            VSSBlock(hidden_dim=encoder_dims[-3], drop_path=0.1, norm_layer=norm_layer, channel_first=channel_first,
-                ssm_d_state=kwargs['ssm_d_state'], ssm_ratio=kwargs['ssm_ratio'], ssm_dt_rank=kwargs['ssm_dt_rank'], ssm_act_layer=ssm_act_layer,
-                ssm_conv=kwargs['ssm_conv'], ssm_conv_bias=kwargs['ssm_conv_bias'], ssm_drop_rate=kwargs['ssm_drop_rate'], ssm_init=kwargs['ssm_init'],
-                forward_type=kwargs['forward_type'], mlp_ratio=kwargs['mlp_ratio'], mlp_act_layer=mlp_act_layer, mlp_drop_rate=kwargs['mlp_drop_rate'],
-                gmlp=kwargs['gmlp'], use_checkpoint=kwargs['use_checkpoint']),
-            Permute(0, 3, 1, 2) if not channel_first else nn.Identity(),
-        )
-        self.st_block_1_semantic = nn.Sequential(
-            Permute(0, 2, 3, 1) if not channel_first else nn.Identity(),
-            VSSBlock(hidden_dim=encoder_dims[-4], drop_path=0.1, norm_layer=norm_layer, channel_first=channel_first,
-                ssm_d_state=kwargs['ssm_d_state'], ssm_ratio=kwargs['ssm_ratio'], ssm_dt_rank=kwargs['ssm_dt_rank'], ssm_act_layer=ssm_act_layer,
-                ssm_conv=kwargs['ssm_conv'], ssm_conv_bias=kwargs['ssm_conv_bias'], ssm_drop_rate=kwargs['ssm_drop_rate'], ssm_init=kwargs['ssm_init'],
-                forward_type=kwargs['forward_type'], mlp_ratio=kwargs['mlp_ratio'], mlp_act_layer=mlp_act_layer, mlp_drop_rate=kwargs['mlp_drop_rate'],
-                gmlp=kwargs['gmlp'], use_checkpoint=kwargs['use_checkpoint']),
-            Permute(0, 3, 1, 2) if not channel_first else nn.Identity(),
-        )           
 
-        self.down_sample_1 = PyramidFusion(in_channels=encoder_dims[-1], out_channels=encoder_dims[-2])
-        self.down_sample_2 = PyramidFusion(in_channels=encoder_dims[-2], out_channels=encoder_dims[-3])
-        self.down_sample_3 = PyramidFusion(in_channels=encoder_dims[-3], out_channels=encoder_dims[-4])
+        self.st_blocks = nn.ModuleList([
+            _make_st_block(encoder_dims[i], channel_first, norm_layer, ssm_act_layer, mlp_act_layer, kwargs)
+            for i in range(self.num_stages)
+        ])
+        # Projection de canaux stage i -> stage i-1 (pour i = 1..N-1).
+        self.down_samples = nn.ModuleList([
+            PyramidFusion(in_channels=encoder_dims[i], out_channels=encoder_dims[i - 1])
+            for i in range(1, self.num_stages)
+        ])
+        # Lissage des stages superficiels qui reçoivent un upsample-add (i = 0..N-2).
+        self.smooth_layers = nn.ModuleList([
+            ResBlock(in_channels=encoder_dims[i], out_channels=encoder_dims[i], stride=1)
+            for i in range(self.num_stages - 1)
+        ])
+        # Lissage final appliqué à la sortie la plus superficielle.
+        self.final_smooth = ResBlock(in_channels=encoder_dims[0], out_channels=encoder_dims[0], stride=1)
 
-        # Smooth layer
-        self.smooth_layer_3_semantic = ResBlock(in_channels=encoder_dims[-2], out_channels=encoder_dims[-2], stride=1) 
-        self.smooth_layer_2_semantic = ResBlock(in_channels=encoder_dims[-3], out_channels=encoder_dims[-3], stride=1)
-        self.smooth_layer_1_semantic = ResBlock(in_channels=encoder_dims[-4], out_channels=encoder_dims[-4], stride=1)
-        self.smooth_layer_0_semantic = ResBlock(in_channels=128, out_channels=128, stride=1) 
-    
     def _upsample_add(self, x, y):
         _, _, H, W = y.size()
         return F.interpolate(x, size=(H, W), mode='bilinear') + y
 
+    def _guided(self, feat, change_map):
+        if self.CHANGE_GUIDED_ATTENTION:
+            return ChangeGuidedAttention()(feat, change_map)
+        return feat
+
     def forward(self, features, change_maps):
-        feat_1, feat_2, feat_3, feat_4 = features
-        change_map_1, change_map_2, change_map_3, change_map_4 = change_maps
+        N = self.num_stages
 
-        for_figs = []
+        # ----- Stage le plus profond -----
+        i = N - 1
+        p = self._guided(features[i], change_maps[i])
+        p = self.st_blocks[i](p)
+        p = self.down_samples[i - 1](p)
 
-        '''
-            Stage I
-        '''
-        p4 = feat_4
-        if self.CHANGE_GUIDED_ATTENTION:
-            p4 = ChangeGuidedAttention()(feat_4, change_map_4)
-            for_figs.append(p4)
+        # ----- Stages superficiels (profond -> superficiel) -----
+        for i in range(N - 2, -1, -1):
+            f = self._guided(features[i], change_maps[i])
+            f = self._upsample_add(p, f)
+            f = self.smooth_layers[i](f)
+            f = self.st_blocks[i](f)
+            if i > 0:
+                p = self.down_samples[i - 1](f)
+            else:
+                p = f
 
-        p4 = self.st_block_4_semantic(p4)
-
-        p4 = self.down_sample_1(p4)
-        '''
-            Stage II
-        '''
-        p3 = feat_3
-        if self.CHANGE_GUIDED_ATTENTION:
-            p3 = ChangeGuidedAttention()(feat_3, change_map_3)
-            for_figs.append(p3)
-        
-        p3 = self._upsample_add(p4, p3)
-        p3 = self.smooth_layer_3_semantic(p3)
-        p3 = self.st_block_3_semantic(p3)
-
-        p3 = self.down_sample_2(p3)
-        '''
-            Stage III
-        '''
-        p2 = feat_2
-        if self.CHANGE_GUIDED_ATTENTION:
-            p2 = ChangeGuidedAttention()(feat_2, change_map_2)
-            for_figs.append(p2)
-
-        p2 = self._upsample_add(p3, p2)
-        p2 = self.smooth_layer_2_semantic(p2)
-        p2 = self.st_block_2_semantic(p2)
-
-        p2 = self.down_sample_3(p2)
-
-        '''
-            Stage IV
-        '''
-        p1 = feat_1
-        if self.CHANGE_GUIDED_ATTENTION:
-            p1 = ChangeGuidedAttention()(feat_1, change_map_1)
-            for_figs.append(p1)
-
-        p1 = self._upsample_add(p2, p1)
-        p1 = self.smooth_layer_1_semantic(p1)
-        p1 = self.st_block_1_semantic(p1)
-        p1 = self.smooth_layer_0_semantic(p1) 
-
-        return p1 
+        p = self.final_smooth(p)
+        return p

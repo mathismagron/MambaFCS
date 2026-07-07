@@ -1,0 +1,41 @@
+# [ÉTUDE ablation encodeur] 3 stages (stage 1/32 retiré) — dataset Hi-UCD, depuis ImageNet.
+# Seule différence vs hiucd_4stage.yaml : le backbone (DEPTHS [2,2,15]) et le nom de sortie.
+cfg: MambaFCS/changedetection/configs/vssm1/vssm_base_224_3stage.yaml
+opts: null
+pretrained_weight_path: MambaFCS/pretrained_weight/vssm_base_0229_ckpt_epoch_237.pth
+
+# ---- Dataset ----
+dataset: Hi-UCD
+type: train
+dataset_root: $SLURM_TMPDIR/Hi-UCD_formatted
+train_dataset_path: $SLURM_TMPDIR/Hi-UCD_formatted/train
+test_dataset_path: $SLURM_TMPDIR/Hi-UCD_formatted/val
+train_data_list_paths:
+  - train.txt
+test_data_list_path: val.txt
+
+# ---- Training ----
+shuffle: true
+batch_size: 2
+crop_size: 512
+start_iter: 0
+max_iters: 800000
+learning_rate: 1.0e-4
+weight_decay: 5.0e-4
+num_classes: 10
+
+# ---- Checkpointing : on part d'ImageNet ----
+resume: null
+optim_path: null
+scheduler_path: null
+save_interval: 2000
+
+# ---- Outputs ----
+model_type: MambaSCD_base
+model_param_path: MambaFCS/saved_models/study
+model_saving_name: HiUCD_3stage
+
+# ---- Runtime ----
+cuda: true
+cuda_device: 0
+do_validation: true
