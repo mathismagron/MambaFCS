@@ -211,6 +211,7 @@ def _build_args(cfg: Dict[str, Any], repo_root: str) -> SimpleNamespace:
         weight_decay=float(cfg.get("weight_decay", 5e-4)),
         num_classes=int(cfg.get("num_classes", 2)),
         model_saving_name=str(_required(cfg, "model_saving_name")),
+        save_interval=int(cfg.get("save_interval", 2000)),
     )
 
 

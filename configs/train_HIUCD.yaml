@@ -31,9 +31,15 @@ weight_decay: 5.0e-4
 num_classes: 10
 
 # ---- Checkpointing (fine-tuning from SECOND) ----
+# `resume` = poids de départ du fine-tuning (chargés uniquement au 1er lancement).
+# En cas d'annulation SLURM (TIME LIMIT), un fichier `last_checkpoint.pth` est
+# écrit dans model_param_path/model_saving_name toutes les `save_interval` itérations.
+# Il suffit de resoumettre le même job : l'entraînement reprend automatiquement
+# à la dernière itération sauvegardée (modèle + optimiseur + scheduler).
 resume: MambaFCS/pretrained_weight/SECOND_SeK_0.255.pth
 optim_path: null
 scheduler_path: null
+save_interval: 2000
 
 # ---- Outputs ----
 model_type: MambaSCD_base

@@ -93,7 +93,7 @@ class Trainer(object):
                                  lr=args.learning_rate,
                                  weight_decay=args.weight_decay)
 
-        self.scheduler = StepLR(self.optim, step_size=10000, gamma=0.5)
+        self.scheduler = StepLR(self.optim, step_size=args.max_iters // 5, gamma=0.5)
 
         if args.resume is not None:
             if getattr(args, 'optim_path', None) is not None and os.path.exists(args.optim_path):
@@ -101,19 +101,49 @@ class Trainer(object):
             if getattr(args, 'scheduler_path', None) is not None and os.path.exists(args.scheduler_path):
                 self.scheduler.load_state_dict(torch.load(args.scheduler_path))
 
+        # ----- Reprise automatique depuis le dernier checkpoint complet -----
+        # Permet de survivre à une annulation SLURM (TIME LIMIT) : il suffit de
+        # resoumettre le même job, l'entraînement repart d'où il s'est arrêté.
+        self.best_kc = 0.0
+        self.checkpoint_path = os.path.join(self.model_save_path, 'last_checkpoint.pth')
+        if os.path.isfile(self.checkpoint_path):
+            print(f"=> Reprise depuis le checkpoint '{self.checkpoint_path}'")
+            ckpt = torch.load(self.checkpoint_path, map_location='cpu')
+            self.deep_model.load_state_dict(ckpt['model'])
+            self.optim.load_state_dict(ckpt['optim'])
+            self.scheduler.load_state_dict(ckpt['scheduler'])
+            self.args.start_iter = int(ckpt.get('iter', 0))
+            self.best_kc = float(ckpt.get('best_kc', 0.0))
+            print(f"=> Entraînement repris à l'itération {self.args.start_iter} "
+                  f"(best SeK={self.best_kc:.3f})")
+
         self.log_dir = self.model_save_path
         if not os.path.exists(self.log_dir):
             os.makedirs(self.log_dir)
 
         self.writer = SummaryWriter(log_dir=os.path.join(self.log_dir, 'logs'))
 
+    def _save_checkpoint(self, next_iter, best_kc):
+        """Sauvegarde atomique de l'état complet (modèle + optim + scheduler + itération)."""
+        tmp_path = self.checkpoint_path + '.tmp'
+        torch.save({
+            'iter': int(next_iter),
+            'model': self.deep_model.state_dict(),
+            'optim': self.optim.state_dict(),
+            'scheduler': self.scheduler.state_dict(),
+            'best_kc': float(best_kc),
+        }, tmp_path)
+        os.replace(tmp_path, self.checkpoint_path)
+
     def training(self):
-        best_kc = 0.0
+        best_kc = self.best_kc
         best_round = []
         torch.cuda.empty_cache()
         elem_num = len(self.train_data_loader)
         train_enumerator = enumerate(self.train_data_loader)
 
+        start_iter = self.args.start_iter
+        save_interval = getattr(self.args, 'save_interval', 2000)
 
         sek_criterion = SeK_Loss(
             num_classes=self.args.num_classes,  # SECOND dataset classes (exclude non-change)
@@ -121,8 +151,11 @@ class Trainer(object):
             beta=1.5
         ).cuda()
 
-        for _ in tqdm(range(elem_num)):
-            itera, data = train_enumerator.__next__()
+        # Boucle sur les itérations restantes (start_iter -> elem_num). En reprise,
+        # on ne rejoue pas les itérations déjà effectuées : on poursuit simplement
+        # l'optimisation sur le nombre d'étapes restant.
+        for global_iter in tqdm(range(start_iter, elem_num), initial=start_iter, total=elem_num):
+            _, data = train_enumerator.__next__()
             pre_change_imgs, post_change_imgs, label_cd, label_clf_t1, label_clf_t2, _ = data
 
             pre_change_imgs = pre_change_imgs.cuda()
@@ -185,7 +218,7 @@ class Trainer(object):
             
             SEK_START_ITER = 0 if (self.args.dataset == 'SECOND' or 'Hi-UCD' in self.args.dataset) else 150000
 
-            if itera + self.args.start_iter > SEK_START_ITER:
+            if global_iter > SEK_START_ITER:
                 weights['sek'] = 0.5
                 weights['bcd'] = 1
                 weights['ce'] = 0.5
@@ -207,30 +240,36 @@ class Trainer(object):
             self.optim.step()
             self.scheduler.step()
 
-            if (itera + 1) % 10 == 0:
-                print(f'iter is {itera + 1 + self.args.start_iter}, change detection loss is {weights["bcd"] * ce_loss_cd}, '
+            if (global_iter + 1) % 10 == 0:
+                print(f'iter is {global_iter + 1}, change detection loss is {weights["bcd"] * ce_loss_cd}, '
                       f'classification loss is {weights["ce"] * (ce_loss_clf_t1 + ce_loss_clf_t2) + weights["lovasz"] * (lovasz_loss_clf_t1 + lovasz_loss_clf_t2)}, '
                       f'SeK loss is {0.5*sek_loss_value}')
-                self.writer.add_scalar('Loss/ChangeDetection', weights["bcd"] * ce_loss_cd, itera + 1 + self.args.start_iter)
-                self.writer.add_scalar('Loss/Segmentation', 1.4 * sek_loss_value, itera + 1 + self.args.start_iter)
-                self.writer.add_scalar('Loss/Classification', weights["ce"] * (ce_loss_clf_t1 + ce_loss_clf_t2) + weights["lovasz"] * (lovasz_loss_clf_t1 + lovasz_loss_clf_t2), itera + 1 + self.args.start_iter)
-                self.writer.add_scalar('Loss/Similarity', weights["similarity"] * similarity_loss, itera + 1 + self.args.start_iter)
-                self.writer.add_scalar('Loss/Total', total_loss, itera + 1 + self.args.start_iter)
-                if ((itera + 1) % 5000 == 0) or (((itera + 1) % 1000 == 0) and ((itera + 1) > 30000)):
+                self.writer.add_scalar('Loss/ChangeDetection', weights["bcd"] * ce_loss_cd, global_iter + 1)
+                self.writer.add_scalar('Loss/Segmentation', 1.4 * sek_loss_value, global_iter + 1)
+                self.writer.add_scalar('Loss/Classification', weights["ce"] * (ce_loss_clf_t1 + ce_loss_clf_t2) + weights["lovasz"] * (lovasz_loss_clf_t1 + lovasz_loss_clf_t2), global_iter + 1)
+                self.writer.add_scalar('Loss/Similarity', weights["similarity"] * similarity_loss, global_iter + 1)
+                self.writer.add_scalar('Loss/Total', total_loss, global_iter + 1)
+                if (global_iter + 1) % 5000 == 0:
                     self.deep_model.eval()
                     kappa_n0, Fscd, IoU_mean, Sek, oa = self.validation()
-                    self.writer.add_scalar('Metrics/Kappa', kappa_n0, itera + 1 + self.args.start_iter)
-                    self.writer.add_scalar('Metrics/F1', Fscd, itera + 1 + self.args.start_iter)
-                    self.writer.add_scalar('Metrics/OA', oa, itera + 1 + self.args.start_iter)
-                    self.writer.add_scalar('Metrics/mIoU', IoU_mean, itera + 1 + self.args.start_iter)
-                    self.writer.add_scalar('Metrics/SeK', Sek, itera + 1 + self.args.start_iter)
+                    self.writer.add_scalar('Metrics/Kappa', kappa_n0, global_iter + 1)
+                    self.writer.add_scalar('Metrics/F1', Fscd, global_iter + 1)
+                    self.writer.add_scalar('Metrics/OA', oa, global_iter + 1)
+                    self.writer.add_scalar('Metrics/mIoU', IoU_mean, global_iter + 1)
+                    self.writer.add_scalar('Metrics/SeK', Sek, global_iter + 1)
                     if Sek > best_kc:
                         torch.save(self.deep_model.state_dict(),
-                                    os.path.join(self.model_save_path, f'{itera + 1 + self.args.start_iter}_model_{Sek:.3f}.pth'))
+                                    os.path.join(self.model_save_path, f'{global_iter + 1}_model_{Sek:.3f}.pth'))
                         best_kc = Sek
                         best_round = [kappa_n0, Fscd, IoU_mean, Sek, oa ]
                     self.deep_model.train()
 
+            # Checkpoint périodique de reprise (survit à une annulation TIME LIMIT).
+            if (global_iter + 1) % save_interval == 0:
+                self._save_checkpoint(global_iter + 1, best_kc)
+
+        # Sauvegarde finale de l'état complet en fin d'entraînement.
+        self._save_checkpoint(elem_num, best_kc)
         print('The accuracy of the best round is ', best_round)
         self.writer.close()
 
