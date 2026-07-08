@@ -306,6 +306,14 @@ class Trainer(object):
                 labels_A = labels_clf_t1.cpu().numpy()
                 labels_B = labels_clf_t2.cpu().numpy()
 
+                # Convention SECOND : la sémantique n'est évaluée que sur les zones
+                # de changement. Sur SECOND les labels valent déjà 0 hors changement,
+                # mais Hi-UCD fournit une carte d'occupation COMPLÈTE (classes 1-9
+                # partout) -> il faut masquer les labels par la vérité terrain du
+                # changement, sinon SeK s'effondre (cf. ChangeMamba tasks/scd.py).
+                labels_A[labels_cd == 0] = 0
+                labels_B[labels_cd == 0] = 0
+
                 change_mask = torch.argmax(output_1, axis=1).cpu().numpy()
 
                 preds_A = torch.argmax(output_semantic_t1, dim=1).cpu().numpy()
