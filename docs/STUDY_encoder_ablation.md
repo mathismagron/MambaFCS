@@ -69,18 +69,20 @@ automatique sur `last_checkpoint.pth` (robustesse TIME LIMIT).
 |---|---|---|---|---|---|---|
 | SECOND 4stage | 206.15 | *(GPU requis)* | 0.2442 | 0.7354 | 0.6483 | 0.8822 |
 | SECOND 3stage |  84.87 | *(GPU requis)* | 0.2464 | 0.7356 | 0.6513 | 0.8840 |
-| HiUCD 4stage  |  —     | — | *(voir note)* | — | — | — |
-| HiUCD 3stage  |  —     | — | *(voir note)* | — | — | — |
+| HiUCD 4stage  | *(job flops)* | *(job flops)* | 0.0332 | 0.6569 | 0.3897 | 0.9841 |
+| HiUCD 3stage  | *(job flops)* | *(job flops)* | 0.0380 | 0.6568 | 0.3716 | 0.9777 |
 
 **Lecture SECOND.** Retirer le stage 1/32 fait passer le modèle de **206 M → 85 M paramètres (−59 %)**
 pour une performance **équivalente** (SeK 0.246 vs 0.244, écart dans le bruit ; mIoU/F1/OA idem).
 → Le stage profond est **redondant** sur SECOND : on l'enlève sans perte. FLOPs à mesurer sur GPU
 (la réduction FLOPs sera plus faible que la réduction params, ce stage agissant sur 16×16 tokens).
 
-**Note Hi-UCD.** Départ ImageNet (décodeurs from scratch) + changement très rare (~2.5 % des pixels)
-→ le SeK reste ~0 pour les deux variantes, donc **non discriminant** ici. Comparer 4 vs 3 stages sur
-Hi-UCD via OA / mIoU / F1 de changement, ou refaire l'entraînement depuis des poids SECOND
-(cf. run « benchmark »). Le bug d'éval label-mask a été corrigé (SeK cohérent), cf. commit `f4d9e10`.
+**Lecture Hi-UCD.** Même départ ImageNet. Après correction du bug d'éval label-mask (commit `f4d9e10`),
+le SeK atteint **0.033–0.038**, soit le niveau de ChangeMamba (0.049) — alors que ChangeMamba partait
+de poids SECOND. Là aussi **3-stage ≈ 4-stage** (le 3-stage devance sur SeK/mIoU, le 4-stage sur F1/OA ;
+écarts dans le bruit). L'OA ~0.98 est gonflé par les ~98 % de pixels inchangés (changement très rare,
+~2.5 % des pixels). → **La conclusion de l'ablation tient sur les deux datasets.** Un run « benchmark »
+depuis des poids SECOND reste utile pour maximiser le SeK et produire les soumissions.
 
 ## Notes / limites
 
