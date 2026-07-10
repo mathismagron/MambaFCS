@@ -90,23 +90,42 @@ def count_params(model):
 
 
 def count_flops(model, crop):
-    try:
-        from fvcore.nn import FlopCountAnalysis
-    except Exception as e:  # pragma: no cover
-        print(f"  (fvcore indisponible : {e})")
-        return None
+    """FLOPs approximatifs d'un forward (pre, post). Ne lève jamais : renvoie None
+    si le calcul échoue. Les scans SSM (noyaux CUDA custom) restent sous-comptés
+    quel que soit l'outil → chiffre à lire comme un ordre de grandeur ; les params
+    (exacts) restent la mesure de référence pour la réduction du modèle."""
     if not torch.cuda.is_available():
         print("  (pas de GPU : FLOPs non calculés, noyaux Mamba requis)")
         return None
     model = model.cuda().eval()
     pre = torch.randn(1, 3, crop, crop, device="cuda")
     post = torch.randn(1, 3, crop, crop, device="cuda")
-    with torch.no_grad():
-        flops = FlopCountAnalysis(model, (pre, post))
-        flops.unsupported_ops_warnings(False)
-        flops.uncalled_modules_warnings(False)
-        total = flops.total()
-    return total
+
+    # 1) Compteur natif PyTorch : robuste (gère les einsum à >2 opérandes, contrairement
+    #    à fvcore qui plante dessus — AssertionError dans einsum_flop_jit).
+    try:
+        from torch.utils.flop_counter import FlopCounterMode
+        fcm = FlopCounterMode(display=False)
+        with torch.no_grad(), fcm:
+            model(pre, post)
+        total = fcm.get_total_flops()
+        if total and total > 0:
+            return total
+    except Exception as e:
+        print(f"  (FlopCounterMode indisponible : {e})")
+
+    # 2) Repli fvcore (peut échouer sur les opérateurs Mamba : on ne plante pas).
+    try:
+        from fvcore.nn import FlopCountAnalysis
+        with torch.no_grad():
+            fa = FlopCountAnalysis(model, (pre, post))
+            fa.unsupported_ops_warnings(False)
+            fa.uncalled_modules_warnings(False)
+            total = fa.total()
+        return total
+    except Exception as e:
+        print(f"  (FLOPs non calculables (fvcore) : {e}) — on garde les params")
+        return None
 
 
 def main():
@@ -128,7 +147,11 @@ def main():
         print(f"  stages (depths) : {stages}")
         print(f"  dims encodeur   : {dims}")
         print(f"  paramètres      : {params / 1e6:.2f} M")
-        flops = count_flops(model, args.crop)
+        try:
+            flops = count_flops(model, args.crop)
+        except Exception as e:  # sécurité : ne jamais interrompre la boucle
+            print(f"  (FLOPs ignorés : {e})")
+            flops = None
         if flops is not None:
             print(f"  FLOPs @ {args.crop}² : {flops / 1e9:.2f} G")
         rows.append((name, params, flops))
@@ -147,10 +170,11 @@ def main():
         print("\n=== Comparaison (référence = 1re config) ===")
         base_p, base_f = rows[0][1], rows[0][2]
         for name, p, f in rows:
-            dp = 100.0 * (1 - p / base_p) if base_p else 0.0
+            # signe intuitif : négatif = réduction par rapport à la baseline (1re config).
+            dp = 100.0 * (p / base_p - 1) if base_p else 0.0
             line = f"  {name:<24} params {p/1e6:7.2f} M ({dp:+.1f}%)"
             if f is not None and base_f:
-                df = 100.0 * (1 - f / base_f)
+                df = 100.0 * (f / base_f - 1)
                 line += f" | FLOPs {f/1e9:7.2f} G ({df:+.1f}%)"
             print(line)
 
