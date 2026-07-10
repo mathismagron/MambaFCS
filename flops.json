@@ -1,10 +1,18 @@
 {
   "second_4stage": {
     "params_m": 206.148,
-    "gflops": null
+    "gflops": 554.837
   },
   "second_3stage": {
     "params_m": 84.873,
-    "gflops": null
+    "gflops": 457.361
+  },
+  "hiucd_4stage": {
+    "params_m": 206.153,
+    "gflops": 555.149
+  },
+  "hiucd_3stage": {
+    "params_m": 84.878,
+    "gflops": 457.673
   }
 }
