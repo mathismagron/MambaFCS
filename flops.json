@@ -1,0 +1,10 @@
+{
+  "second_4stage": {
+    "params_m": 206.148,
+    "gflops": null
+  },
+  "second_3stage": {
+    "params_m": 84.873,
+    "gflops": null
+  }
+}
