@@ -67,15 +67,18 @@ automatique sur `last_checkpoint.pth` (robustesse TIME LIMIT).
 
 | Run | Params (M) | GFLOPs @512 | SeK | mIoU | F1 | OA |
 |---|---|---|---|---|---|---|
-| SECOND 4stage | 206.15 | *(GPU requis)* | 0.2442 | 0.7354 | 0.6483 | 0.8822 |
-| SECOND 3stage |  84.87 | *(GPU requis)* | 0.2464 | 0.7356 | 0.6513 | 0.8840 |
-| HiUCD 4stage  | *(job flops)* | *(job flops)* | 0.0332 | 0.6569 | 0.3897 | 0.9841 |
-| HiUCD 3stage  | *(job flops)* | *(job flops)* | 0.0380 | 0.6568 | 0.3716 | 0.9777 |
+| SECOND 4stage | 206.15 | 554.84 | 0.2442 | 0.7354 | 0.6483 | 0.8822 |
+| SECOND 3stage |  84.87 | 457.36 | 0.2464 | 0.7356 | 0.6513 | 0.8840 |
+| HiUCD 4stage  | 206.15 | 555.15 | 0.0332 | 0.6569 | 0.3897 | 0.9841 |
+| HiUCD 3stage  |  84.88 | 457.67 | 0.0380 | 0.6568 | 0.3716 | 0.9777 |
 
-**Lecture SECOND.** Retirer le stage 1/32 fait passer le modèle de **206 M → 85 M paramètres (−59 %)**
-pour une performance **équivalente** (SeK 0.246 vs 0.244, écart dans le bruit ; mIoU/F1/OA idem).
-→ Le stage profond est **redondant** sur SECOND : on l'enlève sans perte. FLOPs à mesurer sur GPU
-(la réduction FLOPs sera plus faible que la réduction params, ce stage agissant sur 16×16 tokens).
+*GFLOPs @512 mesurés avec `torch.utils.flop_counter` (conv/linéaires/matmuls) ; les scans SSM
+(noyaux CUDA custom) ne sont pas comptés → ordre de grandeur. Les paramètres sont exacts.*
+
+**Lecture SECOND.** Retirer le stage 1/32 fait passer le modèle de **206 M → 85 M paramètres (−58.8 %)**
+et **555 → 457 GFLOPs (−17.6 %)**, pour une performance **équivalente** (SeK 0.246 vs 0.244, écart dans
+le bruit ; mIoU/F1/OA idem). → Le stage profond est **redondant** : gain surtout en **taille de modèle**
+(2.4× plus petit), et modeste en calcul — cohérent avec un stage agissant sur seulement 16×16 tokens.
 
 **Lecture Hi-UCD.** Même départ ImageNet. Après correction du bug d'éval label-mask (commit `f4d9e10`),
 le SeK atteint **0.033–0.038**, soit le niveau de ChangeMamba (0.049) — alors que ChangeMamba partait
