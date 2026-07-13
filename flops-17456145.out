@@ -1,0 +1,54 @@
+/home/magron13/MambaFCS/classification/models/vmamba.py:252: FutureWarning: `torch.cuda.amp.custom_fwd(args...)` is deprecated. Please use `torch.amp.custom_fwd(args..., device_type='cuda')` instead.
+  @torch.cuda.amp.custom_fwd
+/home/magron13/MambaFCS/classification/models/vmamba.py:260: FutureWarning: `torch.cuda.amp.custom_bwd(args...)` is deprecated. Please use `torch.amp.custom_bwd(args..., device_type='cuda')` instead.
+  @torch.cuda.amp.custom_bwd
+/home/magron13/MambaFCS/classification/models/vmamba.py:275: FutureWarning: `torch.cuda.amp.custom_fwd(args...)` is deprecated. Please use `torch.amp.custom_fwd(args..., device_type='cuda')` instead.
+  @torch.cuda.amp.custom_fwd
+/home/magron13/MambaFCS/classification/models/vmamba.py:283: FutureWarning: `torch.cuda.amp.custom_bwd(args...)` is deprecated. Please use `torch.amp.custom_bwd(args..., device_type='cuda')` instead.
+  @torch.cuda.amp.custom_bwd
+/home/magron13/MambaFCS/classification/models/vmamba.py:296: FutureWarning: `torch.cuda.amp.custom_fwd(args...)` is deprecated. Please use `torch.amp.custom_fwd(args..., device_type='cuda')` instead.
+  @torch.cuda.amp.custom_fwd
+/home/magron13/MambaFCS/classification/models/vmamba.py:304: FutureWarning: `torch.cuda.amp.custom_bwd(args...)` is deprecated. Please use `torch.amp.custom_bwd(args..., device_type='cuda')` instead.
+  @torch.cuda.amp.custom_bwd
+/home/magron13/env_mambafcs/lib/python3.11/site-packages/torch/nn/modules/linear.py:124: UserWarning: Initializing zero-element tensors is a no-op
+  init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+
+=== second_4stage ===
+=> merge config from /home/magron13/MambaFCS/changedetection/configs/vssm1/vssm_base_224.yaml
+False
+  stages (depths) : [2, 2, 15, 2]
+  dims encodeur   : [128, 256, 512, 1024]
+  paramètres      : 206.15 M
+  FLOPs @ 512² : 554.84 G
+
+=== second_3stage ===
+=> merge config from /home/magron13/MambaFCS/changedetection/configs/vssm1/vssm_base_224_3stage.yaml
+False
+  stages (depths) : [2, 2, 15]
+  dims encodeur   : [128, 256, 512]
+  paramètres      : 84.87 M
+  FLOPs @ 512² : 457.36 G
+
+=== hiucd_4stage ===
+=> merge config from /home/magron13/MambaFCS/changedetection/configs/vssm1/vssm_base_224.yaml
+False
+  stages (depths) : [2, 2, 15, 2]
+  dims encodeur   : [128, 256, 512, 1024]
+  paramètres      : 206.15 M
+  FLOPs @ 512² : 555.15 G
+
+=== hiucd_3stage ===
+=> merge config from /home/magron13/MambaFCS/changedetection/configs/vssm1/vssm_base_224_3stage.yaml
+False
+  stages (depths) : [2, 2, 15]
+  dims encodeur   : [128, 256, 512]
+  paramètres      : 84.88 M
+  FLOPs @ 512² : 457.67 G
+
+Écrit : flops.json
+
+=== Comparaison (référence = 1re config) ===
+  second_4stage            params  206.15 M (+0.0%) | FLOPs  554.84 G (+0.0%)
+  second_3stage            params   84.87 M (-58.8%) | FLOPs  457.36 G (-17.6%)
+  hiucd_4stage             params  206.15 M (+0.0%) | FLOPs  555.15 G (+0.1%)
+  hiucd_3stage             params   84.88 M (-58.8%) | FLOPs  457.67 G (-17.5%)

@@ -1,0 +1,40 @@
+/home/magron13/MambaFCS/classification/models/vmamba.py:252: FutureWarning: `torch.cuda.amp.custom_fwd(args...)` is deprecated. Please use `torch.amp.custom_fwd(args..., device_type='cuda')` instead.
+  @torch.cuda.amp.custom_fwd
+/home/magron13/MambaFCS/classification/models/vmamba.py:260: FutureWarning: `torch.cuda.amp.custom_bwd(args...)` is deprecated. Please use `torch.amp.custom_bwd(args..., device_type='cuda')` instead.
+  @torch.cuda.amp.custom_bwd
+/home/magron13/MambaFCS/classification/models/vmamba.py:275: FutureWarning: `torch.cuda.amp.custom_fwd(args...)` is deprecated. Please use `torch.amp.custom_fwd(args..., device_type='cuda')` instead.
+  @torch.cuda.amp.custom_fwd
+/home/magron13/MambaFCS/classification/models/vmamba.py:283: FutureWarning: `torch.cuda.amp.custom_bwd(args...)` is deprecated. Please use `torch.amp.custom_bwd(args..., device_type='cuda')` instead.
+  @torch.cuda.amp.custom_bwd
+/home/magron13/MambaFCS/classification/models/vmamba.py:296: FutureWarning: `torch.cuda.amp.custom_fwd(args...)` is deprecated. Please use `torch.amp.custom_fwd(args..., device_type='cuda')` instead.
+  @torch.cuda.amp.custom_fwd
+/home/magron13/MambaFCS/classification/models/vmamba.py:304: FutureWarning: `torch.cuda.amp.custom_bwd(args...)` is deprecated. Please use `torch.amp.custom_bwd(args..., device_type='cuda')` instead.
+  @torch.cuda.amp.custom_bwd
+/home/magron13/env_mambafcs/lib/python3.11/site-packages/torch/nn/modules/linear.py:124: UserWarning: Initializing zero-element tensors is a no-op
+  init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+
+=== second_4stage ===
+=> merge config from /home/magron13/MambaFCS/changedetection/configs/vssm1/vssm_base_224.yaml
+False
+  stages (depths) : [2, 2, 15, 2]
+  dims encodeur   : [128, 256, 512, 1024]
+  paramètres      : 206.15 M
+Traceback (most recent call last):
+  File "/home/magron13/MambaFCS/analyze/count_flops.py", line 159, in <module>
+    main()
+  File "/home/magron13/MambaFCS/analyze/count_flops.py", line 131, in main
+    flops = count_flops(model, args.crop)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/magron13/MambaFCS/analyze/count_flops.py", line 108, in count_flops
+    total = flops.total()
+            ^^^^^^^^^^^^^
+  File "/home/magron13/env_mambafcs/lib/python3.11/site-packages/fvcore/nn/jit_analysis.py", line 248, in total
+    stats = self._analyze()
+            ^^^^^^^^^^^^^^^
+  File "/home/magron13/env_mambafcs/lib/python3.11/site-packages/fvcore/nn/jit_analysis.py", line 583, in _analyze
+    op_counts = self._op_handles[kind](inputs, outputs)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/magron13/env_mambafcs/lib/python3.11/site-packages/fvcore/nn/jit_handles.py", line 181, in einsum_flop_jit
+    assert len(inputs) == 2, len(inputs)
+           ^^^^^^^^^^^^^^^^
+AssertionError: 3
