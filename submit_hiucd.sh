@@ -33,6 +33,7 @@ python changedetection/script/predict_hiucd_submission.py \
   --t2-dir $SLURM_TMPDIR/Hi-UCD_formatted/test/T2 \
   --out-dir $SLURM_TMPDIR/submission_hiucd \
   --zip $SCRATCH/submission_hiucd.zip \
-  --batch-size 4
+  --batch-size 4 || { echo "!! ÉCHEC de la génération des prédictions"; exit 1; }
 
-echo "Terminé ! Archive prête : \$SCRATCH/submission_hiucd.zip"
+echo "Terminé ! Archive prête : $SCRATCH/submission_hiucd.zip"
+ls -lh $SCRATCH/submission_hiucd.zip

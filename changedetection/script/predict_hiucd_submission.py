@@ -53,7 +53,20 @@ import MambaFCS.changedetection.datasets.imutils as imutils  # noqa: E402
 
 
 def _resolve(path):
-    return path if os.path.isabs(path) else os.path.abspath(os.path.join(_ROOT, path))
+    """Résout un chemin relatif en essayant plusieurs bases, et garde celle qui existe.
+
+    Nécessaire car les chemins n'ont pas tous la même racine :
+      - le `cfg` du YAML s'écrit `MambaFCS/changedetection/...` → relatif au dossier PARENT du repo ;
+      - un `--checkpoint saved_models/...` est relatif au repo lui-même (ou au cwd du job).
+    """
+    if os.path.isabs(path):
+        return path
+    for base in (os.getcwd(), _MAMBA, _ROOT):
+        candidate = os.path.abspath(os.path.join(base, path))
+        if os.path.exists(candidate):
+            return candidate
+    # Introuvable : on renvoie le chemin le plus probable pour un message d'erreur clair.
+    return os.path.abspath(os.path.join(_MAMBA, path))
 
 
 def build_model(train_cfg_path):
